@@ -1,0 +1,8 @@
+## List of resources to be deployed
+resources: []
+
+## Override name of the Chart release
+nameOverride: ""
+
+## Additional labels to add on resources
+labels: {}

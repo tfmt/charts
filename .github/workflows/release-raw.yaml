@@ -1,0 +1,50 @@
+name: Helm Chart release
+
+on:
+  push:
+    tags: ['*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        id: gpg
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}
+
+      - name: Convert GPG v2 key
+        run: |
+          gpg --export > ~/.gnupg/pubring.gpg
+          gpg --batch --pinentry-mode loopback --yes --passphrase '${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}' --export-secret-key > ~/.gnupg/secring.gpg
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+          helm registry login ghcr.io \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Package and sign Helm chart
+        run: |
+          echo '${{ secrets.GPG_PRIVATE_KEY_PASSPHRASE }}' | \
+          helm package ./charts/raw \
+            --version "${GITHUB_REF_NAME}" \
+            --sign \
+            --key "${{ steps.gpg.outputs.name }}" \
+            --keyring ~/.gnupg/secring.gpg \
+            --passphrase-file -
+
+      - name: Push Helm chart to registry
+        run: |
+          helm push \
+            "raw-${GITHUB_REF_NAME}.tgz" \
+            "oci://ghcr.io/${{ github.repository }}"

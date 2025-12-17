@@ -1,0 +1,5 @@
+{{- $resource := fromYaml (include "raw.resource" .) -}}
+{{- range .Values.resources }}
+---
+{{ toYaml (merge . $resource) -}}
+{{- end }}

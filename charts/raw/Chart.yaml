@@ -1,0 +1,9 @@
+apiVersion: v2
+name: raw
+version: 1.0.0
+description: Deploy additional resources
+keywords:
+  - raw
+maintainers:
+  - name: Christian Kröger
+    email: ck@tfmt.de
